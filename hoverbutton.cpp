@@ -12,7 +12,7 @@ void HoverButton::setShadowGlowAnimation(QPropertyAnimation *animation) {
 void HoverButton::enterEvent(QEnterEvent *event) {
     if (shadowGlow) {
         shadowGlow->setStartValue(10);
-        shadowGlow->setEndValue(20); // Increase blur for glow effect
+        shadowGlow->setEndValue(60); // Increase blur for glow effect
         shadowGlow->start();
     }
     setStyleSheet(
@@ -26,7 +26,7 @@ void HoverButton::enterEvent(QEnterEvent *event) {
 
 void HoverButton::leaveEvent(QEvent *event) {
     if (shadowGlow) {
-        shadowGlow->setStartValue(20);
+        shadowGlow->setStartValue(60);
         shadowGlow->setEndValue(10); // Reduce blur for glow effect
         shadowGlow->start();
     }

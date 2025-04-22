@@ -8,10 +8,12 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RC_COMPILER "C:/msys64/mingw64/bin/windres.exe")
+set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
+
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets)
-
 
 set(PROJECT_SOURCES
     main.cpp
@@ -22,6 +24,7 @@ set(PROJECT_SOURCES
     mainwindow.ui
     PasswordTextEdit.h
     hoverbutton.h
+
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -32,8 +35,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         PasswordTextEdit.cpp
         hoverbutton.h
         hoverbutton.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc
 
     )
+
+
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET TicTacToe APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
@@ -57,6 +63,11 @@ endif()
 target_link_libraries(TicTacToe PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(TicTacToe PRIVATE Qt6::Multimedia)
 target_link_libraries(TicTacToe PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::Multimedia Qt6::MultimediaWidgets)
+# Define the icon file for the executable
+
+
+# Add the resource to the executable (Windows-specific)
+
 
 include_directories(${CMAKE_SOURCE_DIR})
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

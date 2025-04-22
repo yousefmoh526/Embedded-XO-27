@@ -18,6 +18,16 @@
 #include <QVideoWidget>
 #include <QGraphicsVideoItem>
 #include <QAudioOutput>
+#include <QMediaDevices>
+#include <QAudioDevice>
+QGraphicsDropShadowEffect* createDropShadowEffect(QObject *parent) {
+    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect(parent);
+    effect->setBlurRadius(20);                  // The intensity of the shadow blur
+    effect->setColor(QColor(255, 255, 255, 128)); // The shadow color (white with transparency)
+    effect->setOffset(3, 3);                   // The offset of the shadow
+    return effect;                             // Returns the created effect
+}
+
 //IMAGE DISPLAYER
 void loadAndDisplayImage(QGraphicsView *view, QString imagePath, double scaleFactor) {
     QGraphicsScene *scene = new QGraphicsScene(view);
@@ -50,9 +60,16 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
 
+    // Set the window title
+    setWindowTitle("X-O - THE GAME");
+
     ui->centralwidget->setGeometry(0, 0, this->width(), this->height());
 
-QString appDir = QApplication::applicationDirPath();
+QString appDir = QApplication::applicationDirPath(); // APP DIR
+    // Use AppDir to dynamically set paths
+    QString icoPath = appDir + "/Images/X-O.ico";
+
+    setWindowIcon(QIcon(icoPath));
     QString musicPath = appDir + "/sounds/back_ground.wav"; // Path to your music file
 
     // Create QMediaPlayer for background music
@@ -80,7 +97,12 @@ QString appDir = QApplication::applicationDirPath();
         }
     });
 
+                                // Connect the player to the audio output
     // After ui->setupUi(this);
+
+
+
+
     QString videoPath = appDir + "/videos/background2.mp4"; // Path to your video file
 
     // Create a QGraphicsScene and QGraphicsView
@@ -141,11 +163,12 @@ if (QFile::exists(soundPath)) {
 clickSound->setVolume(1); // Set volume (0.0 to 1.0)
 //Connect the button's clicked signal to the sound effect
 connect(ui->loginButton, &QPushButton::clicked, clickSound, &QSoundEffect::play);
-
+connect(ui->GuestButton, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 
 
 // Raise your UI components
 ui->MainImage->raise();
+
 
 
     //Login and register screen
@@ -159,7 +182,7 @@ ui->MainImage->raise();
     //login register button
     QIcon iconLogin("images/LoginRegister.png"); // Adjust the path to match your folder and file name
     ui->loginButton->setIcon(iconLogin);
-    ui->loginButton->setIconSize(QSize(300, 300));
+    ui->loginButton->setIconSize(QSize(350, 350));
     ui->loginButton->setStyleSheet(
         "QPushButton {"
         "    border: none;"
@@ -194,25 +217,65 @@ ui->MainImage->raise();
 
 
 
-    // Apply a drop shadow effect to the button
-    QGraphicsDropShadowEffect *shadowEffect = new QGraphicsDropShadowEffect(this);
-    shadowEffect->setBlurRadius(20); // Amount of blur
-    shadowEffect->setColor(QColor(255, 255, 255, 128)); // White glow
-    shadowEffect->setOffset(3, 3); // No offset for centered shadow
-    ui->loginButton->setGraphicsEffect(shadowEffect);
-    QPropertyAnimation *shadowGlow = new QPropertyAnimation(shadowEffect, "blurRadius", this);
-    shadowGlow->setDuration(200);
-    shadowGlow->setStartValue(10); // Initial blur
-    shadowGlow->setEndValue(20); // Glow increase
+    ui->loginButton->setGraphicsEffect(createDropShadowEffect(this));
+
+
+
+
+
+    QPropertyAnimation *UnifiedAnimation = new QPropertyAnimation(ui->loginButton, "geometry", this);
+    UnifiedAnimation->setDuration(scaleAnimation->duration() + animation->duration()); // Combine durations
+    UnifiedAnimation->setStartValue(ui->loginButton->geometry());
+    UnifiedAnimation->setKeyValueAt(0.5, ui->loginButton->geometry().adjusted(5, 5, -5, -5)); // Midpoint (shrink effect)
+    UnifiedAnimation->setEndValue(ui->loginButton->geometry().adjusted(-2, -2, 2, 2)); // Endpoint (bounce effect)
+    UnifiedAnimation->setEasingCurve(QEasingCurve::OutBounce); // Set easing curve for effect
+
 
     // Connect animations to button clicks
-    connect(ui->loginButton, &QPushButton::clicked, this, [scaleAnimation]() {
-        scaleAnimation->start();
-    });
-    connect(ui->loginButton, &QPushButton::clicked, this, [animation]() {
-        animation->start();
+
+    connect(ui->loginButton, &QPushButton::clicked, this, [UnifiedAnimation]() {
+        UnifiedAnimation->start();
     });
 
+    // Create Guest Button
+
+    QIcon iconGuest("images/GUEST.png"); // Adjust the path to match your guest button image file
+    ui->GuestButton->setIcon(iconGuest);
+    ui->GuestButton->setIconSize(QSize(200, 200));
+
+    // Style for the Guest Button (same as loginButton)
+   ui->GuestButton->setStyleSheet(
+        "QPushButton {"
+        "    border: none;"
+        "    border-radius: 10px;" /* Smooth edges */
+        "    color: white;" /* Ensure text/icon contrasts well */
+        "}"
+        "QPushButton:hover {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "        stop:0 rgba(60, 60, 60, 1), stop:1 rgba(30, 30, 30, 0.9));" /* Subtle hover gradient */
+        "    border: 1px solid rgba(255, 255, 255, 0.2);" /* Simulated glow */
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgba(20, 20, 20, 0.9);" /* Slightly darker when pressed */
+        "    border: 1px solid rgba(255, 255, 255, 0.4);" /* Stronger pressed border glow */
+        "}"
+        );
+
+    QPropertyAnimation *guestUnifiedAnimation = new QPropertyAnimation(ui->GuestButton, "geometry", this);
+    guestUnifiedAnimation->setDuration(scaleAnimation->duration() + animation->duration()); // Combine durations
+    guestUnifiedAnimation->setStartValue(ui->GuestButton->geometry());
+    guestUnifiedAnimation->setKeyValueAt(0.5, ui->GuestButton->geometry().adjusted(5, 5, -5, -5)); // Midpoint (shrink effect)
+    guestUnifiedAnimation->setEndValue(ui->GuestButton->geometry().adjusted(-2, -2, 2, 2)); // Endpoint (bounce effect)
+    guestUnifiedAnimation->setEasingCurve(QEasingCurve::OutBounce); // Set easing curve for effect
+
+
+
+    // Apply drop shadow effect to Guest Button (reuse from Login Button)
+   ui->GuestButton->setGraphicsEffect(createDropShadowEffect(this));
+    // Trigger unified animation
+    connect(ui->GuestButton, &QPushButton::clicked, this, [guestUnifiedAnimation]() {
+        guestUnifiedAnimation->start();
+    });
 
     ui->Menus->raise(); // Raise the stacked widget containing your pages
 
@@ -221,14 +284,6 @@ ui->MainImage->raise();
     ui->PlayButton->raise();
     ui->MainImage->raise();
 
-    connect(musicPlayer, &QMediaPlayer::mediaStatusChanged, this, [](QMediaPlayer::MediaStatus status) {
-        qDebug() << "Media Status:" << status;
-
-    });
-
-    connect(musicPlayer, &QMediaPlayer::errorOccurred, this, [](QMediaPlayer::Error error) {
-        qDebug() << "Media Player Error:" << error;
-    });
 
 
     //Play Button

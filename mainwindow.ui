@@ -84,7 +84,7 @@
      <widget class="HoverButton" name="loginButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
+        <x>460</x>
         <y>400</y>
         <width>381</width>
         <height>81</height>
@@ -94,10 +94,10 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="GuestButton">
+     <widget class="HoverButton" name="GuestButton">
       <property name="geometry">
        <rect>
-        <x>450</x>
+        <x>460</x>
         <y>550</y>
         <width>381</width>
         <height>81</height>
