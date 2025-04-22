@@ -2,94 +2,126 @@
 #include <vector>
 #include <algorithm>
 
-class minimax {
+class minimax
+{
 private:
+
     short PLAYER = 0; // 0 will be the default for 'O', 1 for 'X'
+    short current_move = -1, current_min = 999, current_max = -999;
 
-    int check_for_win(const short board[][3], const short &player, const short &depth) {
-        short minormax = (player != PLAYER) ? -1 : 1;
 
-        // Check rows
-        for (short i = 0; i < 3; i++) {
-            if(board[i][0] == player && board[i][1] == player && board[i][2] == player) {
-                return minormax * (10 - depth);
+    /// @brief Checks for a win in the board.
+    /// @param board The board to check. 3x3
+    /// @param player Player(bot) symbol, either 0 or 1
+    /// @return +10 for a win, -10 for a loss, 0 for a draw
+    int check_for_win(const short board[][3], const short &player, const short &depth) 
+    {
+        short minormax;
+        
+        if (player != PLAYER)
+        {
+            minormax = -1;
+        }
+        else
+        {
+            minormax = 1;           // By default, this function is used to get max value, if we are using it for opponent, it calculates min.
+        }
+
+
+        for (short i = 0; i < 3; i++)
+        {
+            if(board[i][0] == player && board[i][1] == player && board[i][2] == player) // Row Check
+            {
+                return minormax*10 + -1*minormax*depth; // win 
+            }
+
+            if(board[0][i] == player && board[1][i] == player && board[2][i] == player) // Column Check
+            {
+                return minormax*10 + -1*minormax*depth; // win   
             }
         }
 
-        // Check columns
-        for (short i = 0; i < 3; i++) {
-            if(board[0][i] == player && board[1][i] == player && board[2][i] == player) {
-                return minormax * (10 - depth);
+        if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||        // Diagonal Check            
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player))         
+        {
+            return minormax*10 + -1*minormax*depth;
+        }
+        
+        for (short i = 0; i < 9; i++)
+        {
+            if (board[i/3][i%3] == -1)
+            {
+                return minormax*999;
             }
         }
 
-        // Check diagonals
-        if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-            (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
-            return minormax * (10 - depth);
-        }
-
-        // Check for draw
-        bool is_full = true;
-        for (short i = 0; i < 9; i++) {
-            if (board[i/3][i%3] == -1) {
-                is_full = false;
-                break;
-            }
-        }
-        if (is_full) return 0;
-
-        return -999; // Game not finished
+        return 0;
     }
 
-    int minmax(short board[][3], short depth, const short &player, int &best_move) {
-        int score = check_for_win(board, player, depth);
-        if (score != -999) return score;
 
-        int best_score = (player == PLAYER) ? -999 : 999;
-        int current_move = -1;
+    /// @brief Minimax function calculates best move
+    /// @param board The board.
+    /// @param depth How many previous moves have been made.
+    /// @param player player symbol.
+    /// @return the index of the best move.
+    int minmax(const short board[][3], short depth, const short &player)
+    {
+        const int win = check_for_win(board, player, depth); // check for a win
+        if ((win <= 10 && win > 0) || (win < 0 && win >= -10)) return win;
 
-        for (short i = 0; i < 9; i++) {
-            if (board[i/3][i%3] == -1) {
-                board[i/3][i%3] = player;
-                int temp_score = minmax(board, depth + 1, !player, current_move);
-                board[i/3][i%3] = -1; // Undo move
+        short temp_score = 0;
+        short which_move = depth % 2; // 0 for player, 1 for opponent.
+        short next_player = -1;
+        if (which_move) next_player = 0;            // so we can switch between min and max
+        else next_player = 1;
+        short new_board[3][3];
+        std::copy(&board[0][0], &board[0][0] + 3*3, &new_board[0][0]);
 
-                if (player == PLAYER) {
-                    if (temp_score > best_score) {
-                        best_score = temp_score;
-                        best_move = i;
-                    }
-                } else {
-                    if (temp_score < best_score) {
-                        best_score = temp_score;
-                        best_move = i;
-                    }
+        for (short i = 0; i < 9; i++)
+        {
+            if (board[i/3][i%3] == -1)
+            {
+                new_board[i/3][i%3] = player;
+                temp_score = minmax(new_board, depth + 1, next_player);
+                if (temp_score > current_max && which_move)                 
+                {
+                    current_move = i;
+                    current_max = temp_score;
                 }
+                else if (temp_score < current_min && !which_move)
+                {
+                    current_move = i;
+                    current_min = temp_score;
+                }
+                
             }
         }
-        return best_score;
+        
+        return current_move;
     }
+
 
 public:
-    minimax() = default;
-    ~minimax() = default;
+    minimax();
+    ~minimax();
 
-    short getmove(const short board[][3]) {
-        int best_move = -1;
-        short temp_board[3][3];
-
-        // Create a copy of the board
-        for(int i = 0; i < 3; i++) {
-            for(int j = 0; j < 3; j++) {
-                temp_board[i][j] = board[i][j];
-            }
-        }
-
-        minmax(temp_board, 0, PLAYER, best_move);
-        return best_move;
+    short getmove(const short board[][3])
+    {
+        return minmax(board, 0, PLAYER);
     }
+
+
+
 };
+
+minimax::minimax(/* args */)
+{
+}
+
+
+minimax::~minimax()
+{
+}
 
 void printTicTacToeBoard(const short board[][3]) {
     std::cout << "\n";
@@ -101,15 +133,17 @@ void printTicTacToeBoard(const short board[][3]) {
             } else if (board[i][j] == 0) {
                 std::cout << "O";
             } else {
-                std::cout << " ";
+                std::cout << " "; // Assuming -1 or any other value is empty
             }
-
+            
+            // Print vertical dividers between columns
             if (j < 2) {
                 std::cout << " | ";
             }
         }
         std::cout << "\n";
-
+        
+        // Print horizontal dividers between rows
         if (i < 2) {
             std::cout << "-----------\n";
         }
@@ -117,69 +151,11 @@ void printTicTacToeBoard(const short board[][3]) {
     std::cout << "\n";
 }
 
-// Test function to verify AI moves
-void testScenario(const char* scenarioName, short board[][3], int expectedMove) {
-    std::cout << "\n=== Testing scenario: " << scenarioName << " ===\n";
-    std::cout << "Initial board state:";
-    printTicTacToeBoard(board);
 
+int main()
+{
+    short board[][3] = {{1, -1, -1}, {1, 1, -1}, {0, -1, -1}};
     minimax solver;
-    int move = solver.getmove(board);
-
-    std::cout << "AI chose position: " << move << " (row: " << move/3 << ", col: " << move%3 << ")\n";
-    if (move == expectedMove) {
-        std::cout << "✓ Test passed! AI made the expected move.\n";
-    } else {
-        std::cout << "✗ Test failed! Expected move: " << expectedMove << "\n";
-    }
-
-    // Show the move on the board
-    board[move/3][move%3] = 0;
-    std::cout << "Board after AI move:";
+    board[solver.getmove(board)/3][solver.getmove(board)%3] = 0;
     printTicTacToeBoard(board);
-    std::cout << "================================\n";
-}
-
-int main() {
-    // Test 1: Block opponent's winning move
-    short board1[][3] = {
-        {1, -1, -1},
-        {1, 1, -1},
-        {0, -1, -1}
-    };
-    testScenario("Block opponent's winning move", board1, 1);
-
-    // Test 2: Take winning move
-    short board2[][3] = {
-        {0, 1, 1},
-        {-1, 0, -1},
-        {-1, -1, -1}
-    };
-    testScenario("Take winning move", board2, 0);
-
-    // Test 3: Center control
-    short board3[][3] = {
-        {-1, -1, -1},
-        {-1, -1, -1},
-        {-1, -1, -1}
-    };
-    testScenario("Empty board - take center", board3, 4);
-
-    // Test 4: Block fork
-    short board4[][3] = {
-        {1, -1, -1},
-        {-1, 0, -1},
-        {-1, -1, 1}
-    };
-    testScenario("Block opponent's fork", board4, 1);
-
-    // Test 5: Force a win
-    short board5[][3] = {
-        {0, 1, 0},
-        {-1, 0, -1},
-        {1, -1, -1}
-    };
-    testScenario("Force a win", board5, 8);
-
-    return 0;
 }
