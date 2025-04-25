@@ -2,6 +2,32 @@
 #include <vector>
 #include <algorithm>
 
+void printTicTacToeBoard(const short board[][3]) {
+    std::cout << "\n";
+    for (int i = 0; i < 3; i++) {
+        std::cout << " ";
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] == 1) {
+                std::cout << "X";
+            } else if (board[i][j] == 0) {
+                std::cout << "O";
+            } else {
+                std::cout << " ";
+            }
+
+            if (j < 2) {
+                std::cout << " | ";
+            }
+        }
+        std::cout << "\n";
+
+        if (i < 2) {
+            std::cout << "-----------\n";
+        }
+    }
+    std::cout << "\n";
+}
+
 class minimax {
 private:
     short PLAYER = 0; // 0 will be the default for 'O', 1 for 'X'
@@ -42,30 +68,35 @@ private:
         return -999; // Game not finished
     }
 
-    int minmax(short board[][3], short depth, const short &player, int &best_move) {
-        int score = check_for_win(board, player, depth);
+    int minmax(short board[][3], short depth, const short &player, int &best_move, int alpha, int beta) {
+        int score = check_for_win(board, !player, depth);
         if (score != -999) return score;
 
         int best_score = (player == PLAYER) ? -999 : 999;
         int current_move = -1;
+        // printTicTacToeBoard(board);
 
         for (short i = 0; i < 9; i++) {
             if (board[i/3][i%3] == -1) {
                 board[i/3][i%3] = player;
-                int temp_score = minmax(board, depth + 1, !player, current_move);
+                int temp_score = minmax(board, depth + 1, !player, current_move, alpha, beta);
                 board[i/3][i%3] = -1; // Undo move
 
                 if (player == PLAYER) {
                     if (temp_score > best_score) {
                         best_score = temp_score;
                         best_move = i;
+                        alpha = std::max(alpha, best_score);
                     }
                 } else {
                     if (temp_score < best_score) {
                         best_score = temp_score;
                         best_move = i;
+                        beta = std::min(beta, best_score);
                     }
                 }
+                
+                if (alpha >= beta) break;
             }
         }
         return best_score;
@@ -86,36 +117,11 @@ public:
             }
         }
 
-        minmax(temp_board, 0, PLAYER, best_move);
+        minmax(temp_board, 0, PLAYER, best_move, -9999, 9999);
         return best_move;
     }
 };
 
-void printTicTacToeBoard(const short board[][3]) {
-    std::cout << "\n";
-    for (int i = 0; i < 3; i++) {
-        std::cout << " ";
-        for (int j = 0; j < 3; j++) {
-            if (board[i][j] == 1) {
-                std::cout << "X";
-            } else if (board[i][j] == 0) {
-                std::cout << "O";
-            } else {
-                std::cout << " ";
-            }
-
-            if (j < 2) {
-                std::cout << " | ";
-            }
-        }
-        std::cout << "\n";
-
-        if (i < 2) {
-            std::cout << "-----------\n";
-        }
-    }
-    std::cout << "\n";
-}
 
 // Test function to verify AI moves
 void testScenario(const char* scenarioName, short board[][3], int expectedMove) {
@@ -141,45 +147,69 @@ void testScenario(const char* scenarioName, short board[][3], int expectedMove) 
 }
 
 int main() {
-    // Test 1: Block opponent's winning move
-    short board1[][3] = {
-        {1, -1, -1},
-        {1, 1, -1},
-        {0, -1, -1}
-    };
-    testScenario("Block opponent's winning move", board1, 1);
 
-    // Test 2: Take winning move
-    short board2[][3] = {
-        {0, 1, 1},
-        {-1, 0, -1},
-        {-1, -1, -1}
-    };
-    testScenario("Take winning move", board2, 0);
-
-    // Test 3: Center control
+    // Test 1: Center control
     short board3[][3] = {
         {-1, -1, -1},
-        {-1, -1, -1},
+        {-1, 1, -1},
         {-1, -1, -1}
     };
-    testScenario("Empty board - take center", board3, 4);
+    testScenario("Empty board - take center", board3, 0);
 
-    // Test 4: Block fork
+    // Test 2: Block opponent's win
     short board4[][3] = {
+        {1, -1, -1},
+        {-1, 1, -1},
+        {-1, -1, 0}
+    };
+    testScenario("Block opponent's win", board4, 8);
+    
+    // Test 3: Take win opportunity
+    short board5[][3] = {
         {1, -1, -1},
         {-1, 0, -1},
         {-1, -1, 1}
     };
-    testScenario("Block opponent's fork", board4, 1);
-
-    // Test 5: Force a win
-    short board5[][3] = {
-        {0, 1, 0},
-        {-1, 0, -1},
-        {1, -1, -1}
+    testScenario("Take winning move", board5, 4);
+    
+    // Test 4: Fork creation
+    short board6[][3] = {
+        {1, -1, -1},
+        {-1, 1, -1},
+        {-1, -1, -1}
     };
-    testScenario("Force a win", board5, 8);
+    testScenario("Create a fork", board6, 6);
+    
+    // Test 5: Block opponent's fork
+    short board7[][3] = {
+        {0, -1, -1},
+        {-1, 1, -1},
+        {-1, -1, 0}
+    };
+    testScenario("Block opponent's fork", board7, 2);
+    
+    // Test 6: Take the corner
+    short board8[][3] = {
+        {-1, -1, -1},
+        {-1, 1, -1},
+        {-1, -1, -1}
+    };
+    testScenario("Empty board with center blocked - take corner", board8, 0);
+    
+    // Test 7: Almost full board
+    short board9[][3] = {
+        {1, 0, 1},
+        {0, 0, 1},
+        {1, -1, 0}
+    };
+    testScenario("Almost full board - only one move", board9, 7);
+    
+    // Test 8: Force a draw
+    short board10[][3] = {
+        {0, 1, 0},
+        {1, 0, -1},
+        {-1, -1, 1}
+    };
+    testScenario("Force a draw", board10, 6);
 
-    return 0;
 }
