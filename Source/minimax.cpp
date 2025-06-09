@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 
+short PLAYER = 0; // 0 will be the default for 'O', 1 for 'X'
+
 void printTicTacToeBoard(const short board[][3]) {
     std::cout << "\n";
     for (int i = 0; i < 3; i++) {
@@ -30,8 +32,12 @@ void printTicTacToeBoard(const short board[][3]) {
 
 class minimax {
 private:
-    short PLAYER = 0; // 0 will be the default for 'O', 1 for 'X'
 
+    /// @brief This function checks if any of the two sides has won the game or has lost it or a draw has taken place
+    /// @param board This is the board
+    /// @param player The symbol for the current player or the one you want to check for. 1 is X 0 is 0 and -1 is NOONE
+    /// @param depth Extra var to calculate the closer win or the further loss.
+    /// @return returns the score for the win or loss condition
     int check_for_win(const short board[][3], const short &player, const short &depth) {
         short minormax = (player != PLAYER) ? -1 : 1;
 
@@ -68,15 +74,23 @@ private:
         return -999; // Game not finished
     }
 
+    /// @brief The main function to find the optimal move, is called numerous times each with time with a depth. has alpha-beta pruning
+    /// @param board the board
+    /// @param depth recrusion depth, this is used to give each win or loss a value to make them more desirable 
+    /// @param player the symbol of the current turns player
+    /// @param best_move last best move found, this is a holds it to make it available for comparisons
+    /// @param alpha alpha in alpha-beta pruning
+    /// @param beta beta in alpha-beta pruning
+    /// @return the best/optimal move in the current board.
     int minmax(short board[][3], short depth, const short &player, int &best_move, int alpha, int beta) {
         int score = check_for_win(board, !player, depth);
         if (score != -999) return score;
 
         int best_score = (player == PLAYER) ? -999 : 999;
         int current_move = -1;
-        // printTicTacToeBoard(board);
+        // printTicTacToeBoard(board); was used for debugging
 
-        for (short i = 0; i < 9; i++) {
+        for (short i = 0; i < 9; i++) {                                         // iterate over each playable move and find fastest win or most further loss
             if (board[i/3][i%3] == -1) {
                 board[i/3][i%3] = player;
                 int temp_score = minmax(board, depth + 1, !player, current_move, alpha, beta);
@@ -96,7 +110,7 @@ private:
                     }
                 }
                 
-                if (alpha >= beta) break;
+                if (alpha >= beta) break;            // quit if the branch of turns is not valuable.
             }
         }
         return best_score;
@@ -121,6 +135,61 @@ public:
         return best_move;
     }
 };
+
+minimax hard_moves;                 // used for medium 
+
+/// @brief Generates easy moves for easy mode; just random moves.
+/// @param board The board.
+/// @return A random move.
+int easy_move(short board[][3])
+{
+    
+    unsigned short move = rand() % 10;
+    for (; 1;)
+    {
+        if (board[move / 3][move % 3] != -1)
+        {
+            move = rand() % 10;       
+        }
+        else
+        {
+            return move;
+        }
+
+    }
+
+}
+
+/// @brief Generates a medium move; half of the time a random move and the other half the optimal.
+/// @param board The board.
+/// @return Medium move.
+int medium_move(short board[][3])
+{
+    unsigned short mode = rand() % 10;
+    if(mode >= 5)
+    {
+        return hard_moves.getmove(board);
+    }
+    else
+    {
+        return easy_move(board);
+    }
+    
+}
+
+/// @brief Finds the optimal move.
+/// @param board again?
+/// @return The optimal move.
+int hard_move(short board[][3])
+{
+    return hard_moves.getmove(board);
+}
+
+/// @brief if needed by Eng/Yaya
+void switch_player()
+{
+    PLAYER = !PLAYER;
+}
 
 
 // Test function to verify AI moves
@@ -147,6 +216,12 @@ void testScenario(const char* scenarioName, short board[][3], int expectedMove) 
 }
 
 int main() {
+
+    std::srand((unsigned) time(NULL));
+
+/*
+
+    Deez some tests yo.
 
     // Test 1: Center control
     short board3[][3] = {
@@ -211,5 +286,32 @@ int main() {
         {-1, -1, 1}
     };
     testScenario("Force a draw", board10, 6);
+
+    */
+
+
+    /*
+
+    short board[][3] = {
+        {-1, -1, -1},
+        {-1, 1, -1},
+        {-1, -1, -1}
+    };
+
+    short optimal_move = 0;
+    short move = medium_move(board);
+    if(move == optimal_move)
+    {
+        std::cout<<"It played the hard move: "<<optimal_move<<"\n";
+    }
+    else
+    {
+        std::cout<<"It played a random move: "<<move<<"\n";
+    }
+
+    board[move / 3][move % 3] = 0;
+    printTicTacToeBoard(board);
+
+    */
 
 }
