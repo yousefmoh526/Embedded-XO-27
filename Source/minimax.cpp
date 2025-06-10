@@ -110,7 +110,7 @@ private:
                     }
                 }
                 
-                if (alpha >= beta) break;            // quit if the branch of turns is not valuable.
+                if (alpha >= beta) break;            // quit if the other turns are not valuable.
             }
         }
         return best_score;
