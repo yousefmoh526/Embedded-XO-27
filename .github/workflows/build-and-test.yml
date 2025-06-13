@@ -17,7 +17,10 @@ jobs:
     - name: Set up environment
       run: |
           sudo apt-get update
-          sudo apt-get install qtbase5-dev qt5-multimedia-dev qt5-multimediawidgets-dev
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:beineri/opt-qt-5.15.2
+          sudo apt-get update
+          sudo apt-get install -y qtbase5-dev qt5-multimedia-dev qt5-multimediawidgets-dev
         
     - name: Build project
       run: |
