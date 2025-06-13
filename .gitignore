@@ -1,0 +1,10 @@
+*.user
+*.pro.user
+build*/
+*.o
+*.log
+*.obj
+*.autosave
+*.moc
+*.qrc.*
+*.qmlc
