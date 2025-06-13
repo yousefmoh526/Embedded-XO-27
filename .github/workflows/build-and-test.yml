@@ -17,6 +17,7 @@ jobs:
     - name: Set up environment
       run: |
           sudo apt-get update
+          sudo apt-get install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
           sudo apt-get install -y software-properties-common
           # Replace the missing PPA with official Qt installation
           sudo apt-get install -y qtbase5-dev qt5-default qttools5-dev-tools
