@@ -14,14 +14,45 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       
-    - name: Set up environment
+    - name: Install dependencies for Qt installer
       run: |
-          sudo apt-get update
-          sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
-          sudo apt-get install -y software-properties-common
-          # Remove qt5-default and use alternative packages
-          sudo apt-get install -y qttools5-dev-tools
-          sudo apt install qtmultimedia6-dev
+        sudo apt-get update
+        sudo apt-get install -y wget libegl1-mesa
+    
+    - name: Install Qt6 non-interactively
+      env:
+        QT_EMAIL: ${{ secrets.QT_ACCOUNT_EMAIL }}
+        QT_PASSWORD: ${{ secrets.QT_ACCOUNT_PASSWORD }}
+      run: |
+        wget https://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run -O qt-installer.run
+        chmod +x qt-installer.run
+        # Create a non-interactive install script
+        cat <<EOF > qt-noninteractive.qs
+        function Controller() {}
+        Controller.prototype.WelcomePageCallback = function() {
+          gui.clickButton(buttons.NextButton);
+        }
+        Controller.prototype.CredentialsPageCallback = function() {
+          gui.currentPageWidget().EmailLineEdit.setText(system.getenv("QT_EMAIL"));
+          gui.currentPageWidget().PasswordLineEdit.setText(system.getenv("QT_PASSWORD"));
+          gui.clickButton(buttons.NextButton);
+        }
+        Controller.prototype.ComponentSelectionPageCallback = function() {
+          // Select only Qt 6. (adjust as needed)
+          gui.clickButton(buttons.NextButton);
+        }
+        Controller.prototype.LicenseAgreementPageCallback = function() {
+          gui.clickButton(buttons.AcceptLicenseButton);
+          gui.clickButton(buttons.NextButton);
+        }
+        Controller.prototype.ReadyForInstallationPageCallback = function() {
+          gui.clickButton(buttons.NextButton);
+        }
+        Controller.prototype.FinishedPageCallback = function() {
+          gui.clickButton(buttons.FinishButton);
+        }
+        EOF
+        ./qt-installer.run --platform minimal --script qt-noninteractive.qs --verbose
           
     - name: Build project
       run: |
