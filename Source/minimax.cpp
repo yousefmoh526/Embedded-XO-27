@@ -191,6 +191,17 @@ void switch_player()
     PLAYER = !PLAYER;
 }
 
+/// @brief if needed by Eng/Yaya
+void switch_player_to_x()
+{
+    PLAYER = 1;
+}
+
+/// @brief if needed by Eng/Yaya
+void switch_player_to_o()
+{
+    PLAYER = 0;
+}
 
 // Test function to verify AI moves
 void testScenario(const char* scenarioName, short board[][3], int expectedMove) {
