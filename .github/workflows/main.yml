@@ -1,55 +1,60 @@
-name: CI
+name: C++ CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        build_type: [Release, Debug]
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v3
       
-    - name: Set up C++ toolchain
+    - name: Install Qt6 and dependencies from Ubuntu repositories
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build
-        sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 libxcb-xinerama0
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-base-dev-tools \
+          qt6-multimedia-dev \
+          libqt6multimedia6 \
+          libqt6multimediawidgets6 \
+          cmake \
+          build-essential \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          pkg-config
         
-    - name: Install Qt6
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '6.6.0'
-        host: 'linux'
-        target: 'desktop'
-        modules: 'qtmultimedia'
-        cache: true
-        
-    - name: Configure CMake
+    - name: Set Qt6 environment variables
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -G Ninja
+        echo "CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6:/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia" >> $GITHUB_ENV
+        echo "Qt6_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6" >> $GITHUB_ENV
+        echo "Qt6Multimedia_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia" >> $GITHUB_ENV
         
-    - name: Build
-      run: cmake --build build --config ${{ matrix.build_type }}
-      
+    - name: Debug Qt6 installation
+      run: |
+        echo "Qt6 installation check:"
+        find /usr -name "Qt6*Config.cmake" 2>/dev/null || true
+        find /usr -name "*Qt6Multimedia*" 2>/dev/null || true
+        pkg-config --list-all | grep -i qt6 || true
+        
+    - name: Fix case sensitivity issues
+      run: |
+        # Fix include statements case sensitivity
+        find . -name "*.cpp" -o -name "*.h" | xargs sed -i 's/#include "passwordTextEdit\.h"/#include "passwordtextedit.h"/g'
+        
+    - name: Build project
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
+        make -j$(nproc)
+        
     - name: Run tests
-      working-directory: build
-      run: ctest --output-on-failure -C ${{ matrix.build_type }}
-      
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-${{ matrix.build_type }}
-        path: |
-          build/
-          !build/**/*.obj
-          !build/**/*.o
-          !build/CMakeFiles/
+      run: |
+        cd build
+        ctest --output-on-failure
