@@ -28,7 +28,7 @@ ButtonAnimation.h
 ButtonAnimation.cpp
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 5)
     qt_add_executable(TicTacToe
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
