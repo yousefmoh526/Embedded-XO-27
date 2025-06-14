@@ -157,7 +157,7 @@
   <customwidget>
    <class>PasswordTextEdit</class>
    <extends>QTextEdit</extends>
-   <header>passwordTextEdit.h</header>
+   <header>PasswordTextEdit.h</header>
   </customwidget>
   <customwidget>
    <class>HoverButton</class>
