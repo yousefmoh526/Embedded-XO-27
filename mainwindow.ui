@@ -436,7 +436,7 @@ border: 5px solid white;</string>
   <customwidget>
    <class>PasswordTextEdit</class>
    <extends>QTextEdit</extends>
-   <header>PasswordTextEdit.h</header>
+   <header>passwordTextEdit.h</header>
   </customwidget>
   <customwidget>
    <class>HoverButton</class>
