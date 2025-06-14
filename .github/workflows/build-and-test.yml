@@ -14,56 +14,45 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       
-    - name: Install dependencies for Qt installer
+    - name: Install Qt6 and dependencies from Ubuntu repositories
       run: |
-        sudo apt-get install -y wget libegl1-mesa
-        sudo apt-get install -y software-properties-common
-        sudo add-apt-repository -y ppa:kisak/kisak-mesa
-        sudo apt-get update # Ensure the PPA is updated
-
-
-    
-    - name: Install Qt6 non-interactively
-      env:
-        QT_EMAIL: ${{ secrets.QT_ACCOUNT_EMAIL }}
-        QT_PASSWORD: ${{ secrets.QT_ACCOUNT_PASSWORD }}
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-base-dev-tools \
+          qt6-multimedia-dev \
+          libqt6multimedia6 \
+          libqt6multimediawidgets6 \
+          cmake \
+          build-essential \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          pkg-config
+        
+    - name: Set Qt6 environment variables
       run: |
-        wget https://download.qt.io/official_releases/online_installers/qt-unified-linux-x64-online.run -O qt-installer.run
-        chmod +x qt-installer.run
-        # Create a non-interactive install script
-        cat <<EOF > qt-noninteractive.qs
-        function Controller() {}
-        Controller.prototype.WelcomePageCallback = function() {
-          gui.clickButton(buttons.NextButton);
-        }
-        Controller.prototype.CredentialsPageCallback = function() {
-          gui.currentPageWidget().EmailLineEdit.setText(system.getenv("QT_EMAIL"));
-          gui.currentPageWidget().PasswordLineEdit.setText(system.getenv("QT_PASSWORD"));
-          gui.clickButton(buttons.NextButton);
-        }
-        Controller.prototype.ComponentSelectionPageCallback = function() {
-          // Select only Qt 6. (adjust as needed)
-          gui.clickButton(buttons.NextButton);
-        }
-        Controller.prototype.LicenseAgreementPageCallback = function() {
-          gui.clickButton(buttons.AcceptLicenseButton);
-          gui.clickButton(buttons.NextButton);
-        }
-        Controller.prototype.ReadyForInstallationPageCallback = function() {
-          gui.clickButton(buttons.NextButton);
-        }
-        Controller.prototype.FinishedPageCallback = function() {
-          gui.clickButton(buttons.FinishButton);
-        }
-        EOF
-        ./qt-installer.run --platform minimal --script qt-noninteractive.qs --verbose
-          
+        echo "CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6:/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia" >> $GITHUB_ENV
+        echo "Qt6_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6" >> $GITHUB_ENV
+        echo "Qt6Multimedia_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia" >> $GITHUB_ENV
+        
+    - name: Debug Qt6 installation
+      run: |
+        echo "Qt6 installation check:"
+        find /usr -name "Qt6*Config.cmake" 2>/dev/null || true
+        find /usr -name "*Qt6Multimedia*" 2>/dev/null || true
+        pkg-config --list-all | grep -i qt6 || true
+        
+    - name: Fix case sensitivity issues
+      run: |
+        # Fix include statements case sensitivity
+        find . -name "*.cpp" -o -name "*.h" | xargs sed -i 's/#include "passwordTextEdit\.h"/#include "passwordtextedit.h"/g'
+        
     - name: Build project
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
+        make -j$(nproc)
         
     - name: Run tests
       run: |
