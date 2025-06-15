@@ -30,49 +30,48 @@ void printTicTacToeBoard(const short board[][3]) {
     std::cout << "\n";
 }
 
+/// @brief This function checks if any of the two sides has won the game or has lost it or a draw has taken place
+/// @param board This is the board
+/// @param player The symbol for the current player or the one you want to check for. 1 is X 0 is 0 and -1 is NOONE
+/// @param depth Extra var to calculate the closer win or the further loss.
+/// @return returns the score for the win or loss condition
+int check_for_win(const short board[][3], const short &player, const short &depth) {
+    short minormax = (player != PLAYER) ? -1 : 1;
+    
+    // Check rows
+    for (short i = 0; i < 3; i++) {
+        if(board[i][0] == player && board[i][1] == player && board[i][2] == player) {
+        return minormax * (10 - depth);
+        }
+    }
+    
+    // Check columns
+    for (short i = 0; i < 3; i++) {
+        if(board[0][i] == player && board[1][i] == player && board[2][i] == player) {
+        return minormax * (10 - depth);
+        }
+    }
+    
+    // Check diagonals
+    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+        return minormax * (10 - depth);
+    }
+    
+    // Check for draw
+    bool is_full = true;
+    for (short i = 0; i < 9; i++) {
+        if (board[i/3][i%3] == -1) {
+            is_full = false;
+            break;
+        }
+    }
+    if (is_full) return 0;
+    
+    return -999; // Game not finished
+}
 class minimax {
 private:
-
-    /// @brief This function checks if any of the two sides has won the game or has lost it or a draw has taken place
-    /// @param board This is the board
-    /// @param player The symbol for the current player or the one you want to check for. 1 is X 0 is 0 and -1 is NOONE
-    /// @param depth Extra var to calculate the closer win or the further loss.
-    /// @return returns the score for the win or loss condition
-    int check_for_win(const short board[][3], const short &player, const short &depth) {
-        short minormax = (player != PLAYER) ? -1 : 1;
-
-        // Check rows
-        for (short i = 0; i < 3; i++) {
-            if(board[i][0] == player && board[i][1] == player && board[i][2] == player) {
-                return minormax * (10 - depth);
-            }
-        }
-
-        // Check columns
-        for (short i = 0; i < 3; i++) {
-            if(board[0][i] == player && board[1][i] == player && board[2][i] == player) {
-                return minormax * (10 - depth);
-            }
-        }
-
-        // Check diagonals
-        if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-            (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
-            return minormax * (10 - depth);
-        }
-
-        // Check for draw
-        bool is_full = true;
-        for (short i = 0; i < 9; i++) {
-            if (board[i/3][i%3] == -1) {
-                is_full = false;
-                break;
-            }
-        }
-        if (is_full) return 0;
-
-        return -999; // Game not finished
-    }
 
     /// @brief The main function to find the optimal move, is called numerous times each with time with a depth. has alpha-beta pruning
     /// @param board the board
