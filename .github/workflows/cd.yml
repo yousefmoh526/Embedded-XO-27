@@ -152,7 +152,9 @@ jobs:
           chmod +x AppDir/AppRun
           
           # Copy desktop file and make it executable
-          cp AppDir/$GAME_NAME.desktop AppDir/
+          if [ ! -f "AppDir/$GAME_NAME.desktop" ]; then
+            cp AppDir/$GAME_NAME.desktop AppDir/
+          fi
           
           # Create icon (placeholder - replace with your game icon)
           if [ ! -f "AppDir/$GAME_NAME.png" ]; then
