@@ -24,10 +24,10 @@ set(PROJECT_SOURCES
     mainwindow.ui
     PasswordTextEdit.h
     hoverbutton.h
-ButtonAnimation.h
-ButtonAnimation.cpp
-        ./Source/minimax.cpp
-        ./Source/minimax.h
+    ButtonAnimation.h
+    ButtonAnimation.cpp
+    ./Source/minimax.cpp
+    ./Source/minimax.h
 
 )
 
@@ -42,8 +42,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc
         ButtonAnimation.cpp
         ButtonAnimation.h
-        minimax.cpp
-        minimax.h
+        ./Source/minimax.cpp
+        ./Source/minimax.h
 
         .gitignore
 
