@@ -25,7 +25,7 @@
 #include <QTimer>
 #include "ButtonAnimation.h"
 #include <QMessageBox>
-#include "minimax.h"
+#include "./Source/minimax.h"
 //meow time to github
 
 //IMAGE DISPLAYER
