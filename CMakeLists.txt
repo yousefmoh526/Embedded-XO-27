@@ -24,6 +24,10 @@ set(PROJECT_SOURCES
     mainwindow.ui
     PasswordTextEdit.h
     hoverbutton.h
+ButtonAnimation.h
+ButtonAnimation.cpp
+        minimax.cpp
+minimax.h
 
 )
 
@@ -36,8 +40,15 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         hoverbutton.h
         hoverbutton.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc
+        ButtonAnimation.cpp
+        ButtonAnimation.h
+        minimax.cpp
+        minimax.h
+
+        .gitignore
 
     )
+
 
 
 # Define target properties for Android with Qt 6 as:

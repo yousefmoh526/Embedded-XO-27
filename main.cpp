@@ -7,7 +7,7 @@
 #include <QAudioOutput>
 #include <QMediaDevices>
 int main(int argc, char *argv[])
-{
+{ std::srand((unsigned) time(NULL));
     QApplication a(argc, argv);
     // Set the application icon (affects the taskbar icon)
     QString appDir = QApplication::applicationDirPath(); // Path to application directory
