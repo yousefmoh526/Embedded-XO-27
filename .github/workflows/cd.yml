@@ -1,5 +1,8 @@
 name: Game CD
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -163,7 +166,7 @@ jobs:
           fi
           
           # Build AppImage
-          ./appimagetool-x86_64.AppImage AppDir $GAME_NAME-${{ steps.get_version.outputs.version }}-x86_64.AppImage
+           ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir $GAME_NAME-${{ steps.get_version.outputs.version }}-x86_64.AppImage
         fi
         
     - name: Create traditional Linux distribution package
