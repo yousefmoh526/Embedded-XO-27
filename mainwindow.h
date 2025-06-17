@@ -25,9 +25,14 @@ private slots:
 
 
 private:
+    QPushButton* getButtonAtIndex(int index);
+    void checkGameStatus();
+    void makeAIMove();
     Ui::MainWindow *ui;
+    int selectedDifficulty = 2;
     bool isXturn;  // ✅ This is your flag for turns
     QString appDir;
+    short board[3][3]; // Represents Tic-Tac-Toe board (-1 for empty, 0 for 'O', 1 for 'X')
  void transitionWithBlur(QStackedWidget* stackedWidget, int currentIndex, int nextIndex);
     void slideTransition(QStackedWidget* stackedWidget, int currentIndex, int nextIndex);
  void applyBlurEffect(QWidget* widget, qreal blurRadius);

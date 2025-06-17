@@ -166,14 +166,50 @@
      <widget class="HoverButton" name="VsAI">
       <property name="geometry">
        <rect>
-        <x>460</x>
-        <y>430</y>
-        <width>381</width>
-        <height>81</height>
+        <x>140</x>
+        <y>540</y>
+        <width>291</width>
+        <height>101</height>
        </rect>
       </property>
       <property name="text">
        <string/>
+      </property>
+     </widget>
+     <widget class="HoverButton" name="VsAI_2">
+      <property name="geometry">
+       <rect>
+        <x>495</x>
+        <y>540</y>
+        <width>291</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="HoverButton" name="VsAI_3">
+      <property name="geometry">
+       <rect>
+        <x>840</x>
+        <y>540</y>
+        <width>291</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="VsAITitle">
+      <property name="geometry">
+       <rect>
+        <x>440</x>
+        <y>390</y>
+        <width>401</width>
+        <height>121</height>
+       </rect>
       </property>
      </widget>
     </widget>
@@ -365,6 +401,25 @@ border: 5px solid white;</string>
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QLabel" name="scoreLabel">
+      <property name="geometry">
+       <rect>
+        <x>850</x>
+        <y>280</y>
+        <width>131</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>8514oem</family>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Score</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="ResultsScreen"/>

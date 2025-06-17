@@ -25,6 +25,7 @@
 #include <QTimer>
 #include "ButtonAnimation.h"
 #include <QMessageBox>
+#include "minimax.h"
 //meow time to github
 
 //IMAGE DISPLAYER
@@ -167,7 +168,8 @@ connect(ui->StatsButton, &QPushButton::clicked, clickSound, &QSoundEffect::play)
 connect(ui->ExitButton, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 connect(ui->VsPlayer, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 connect(ui->VsAI, &QPushButton::clicked, clickSound, &QSoundEffect::play);
-
+connect(ui->VsAI_2, &QPushButton::clicked, clickSound, &QSoundEffect::play);
+connect(ui->VsAI_3, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 
 //connect game buttons
 connect(ui->index0, &QPushButton::clicked, this, [=]() { setImageOnButton(ui->index0); });
@@ -234,7 +236,7 @@ ui->MainImage->raise();
         UnifiedAnimation->start();
     });
     connect(ui->loginButton, &QPushButton::clicked, [this]() {
-
+updatePlayerLabel(ui->UsernameText->toPlainText());
         // Add a tiny delay (e.g., 300 ms) before the transition starts
         QTimer::singleShot(200, [this]() {
             transitionWithBlur(ui->Menus, 0, 1);
@@ -489,7 +491,7 @@ ui->MainImage->raise();
         VsPlayerUnifiedAnimation->start();
     });
     connect(ui->VsPlayer, &QPushButton::clicked, [this]() {
-
+selectedDifficulty = 3;
         // Add a tiny delay (e.g., 300 ms) before the transition starts
         QTimer::singleShot(200, [this]() {
  transitionWithBlur(ui->Menus, 2, 4);
@@ -498,10 +500,10 @@ ui->MainImage->raise();
         });
     });
 
-    //VS AI
+    //VS AI EASY
 
 
-    QIcon VsAI(appDir +"/images/VS-AI.png"); // Adjust the path to match your folder and file name
+    QIcon VsAI(appDir +"/images/Ai-Easy.png"); // Adjust the path to match your folder and file name
     ui->VsAI->setIcon(VsAI);
     ui->VsAI->setIconSize(QSize(160, 160));
     ui->VsAI->setStyleSheet(
@@ -533,7 +535,7 @@ ui->MainImage->raise();
         VsAIUnifiedAnimation->start();
     });
     connect(ui->VsAI, &QPushButton::clicked, [this]() {
-
+selectedDifficulty = 0;
         // Add a tiny delay (e.g., 300 ms) before the transition starts
         QTimer::singleShot(200, [this]() {
  transitionWithBlur(ui->Menus, 2, 4);
@@ -541,6 +543,100 @@ ui->MainImage->raise();
  initializeBoard();
         });
     });
+
+    //VS AI MEDIUM
+
+
+    QIcon VsAI_2(appDir +"/images/Ai-Med.png"); // Adjust the path to match your folder and file name
+    ui->VsAI_2->setIcon(VsAI_2);
+    ui->VsAI_2->setIconSize(QSize(160, 160));
+    ui->VsAI_2->setStyleSheet(
+        "QPushButton {"
+        "    border: none;"
+
+        "    border-radius: 10px;" /* Smooth edges */
+        "    color: white;" /* Ensure text/icon contrasts well */
+        "}"
+        "QPushButton:hover {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "        stop:0 rgba(60, 60, 60, 1), stop:1 rgba(30, 30, 30, 0.9));" /* Subtle hover gradient */
+        "    border: 1px solid rgba(255, 255, 255, 0.2);" /* Simulated glow */
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgba(20, 20, 20, 0.9);" /* Slightly darker when pressed */
+        "    border: 1px solid rgba(255, 255, 255, 0.4);" /* Stronger pressed border glow */
+        "}"
+        );
+
+    ui->VsAI_2->setGraphicsEffect(createDropShadowEffect(this));
+
+    // Connect animations to button clicks
+
+    QPropertyAnimation* VsAI2UnifiedAnimation = createUnifiedAnimation(ui->VsAI_2, this);
+
+    // Connect UnifiedAnimation to the button click
+    connect(ui->VsAI_2, &QPushButton::clicked, this, [VsAI2UnifiedAnimation]() {
+        VsAI2UnifiedAnimation->start();
+    });
+    connect(ui->VsAI_2, &QPushButton::clicked, [this]() {
+selectedDifficulty = 1;
+        // Add a tiny delay (e.g., 300 ms) before the transition starts
+        QTimer::singleShot(200, [this]() {
+            transitionWithBlur(ui->Menus, 2, 4);
+            moveGraphicsView();
+            initializeBoard();
+        });
+    });
+
+    //VS AI HARD
+
+
+    QIcon VsAI_3(appDir +"/images/Ai-Hard.png"); // Adjust the path to match your folder and file name
+    ui->VsAI_3->setIcon(VsAI_3);
+    ui->VsAI_3->setIconSize(QSize(160, 160));
+    ui->VsAI_3->setStyleSheet(
+        "QPushButton {"
+        "    border: none;"
+
+        "    border-radius: 10px;" /* Smooth edges */
+        "    color: white;" /* Ensure text/icon contrasts well */
+        "}"
+        "QPushButton:hover {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "        stop:0 rgba(60, 60, 60, 1), stop:1 rgba(30, 30, 30, 0.9));" /* Subtle hover gradient */
+        "    border: 1px solid rgba(255, 255, 255, 0.2);" /* Simulated glow */
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgba(20, 20, 20, 0.9);" /* Slightly darker when pressed */
+        "    border: 1px solid rgba(255, 255, 255, 0.4);" /* Stronger pressed border glow */
+        "}"
+        );
+
+    ui->VsAI_3->setGraphicsEffect(createDropShadowEffect(this));
+
+    // Connect animations to button clicks
+
+    QPropertyAnimation* VsAI3UnifiedAnimation = createUnifiedAnimation(ui->VsAI_3, this);
+
+    // Connect UnifiedAnimation to the button click
+    connect(ui->VsAI_3, &QPushButton::clicked, this, [VsAI3UnifiedAnimation]() {
+        VsAI3UnifiedAnimation->start();
+    });
+    connect(ui->VsAI_3, &QPushButton::clicked, [this]() {
+selectedDifficulty = 2;
+        // Add a tiny delay (e.g., 300 ms) before the transition starts
+        QTimer::singleShot(200, [this]() {
+
+            transitionWithBlur(ui->Menus, 2, 4);
+            moveGraphicsView();
+            initializeBoard();
+        });
+    });
+
+    //Ai TITLE
+
+    loadAndDisplayImage(ui->VsAITitle, appDir + "/images/AITitle.png", 1);
+
 
 //Arena
 
@@ -564,7 +660,7 @@ void MainWindow::applyBlurEffect(QWidget* widget, qreal blurRadius) {
     blurEffect->setBlurRadius(blurRadius);  // Set the blur intensity
     widget->setGraphicsEffect(blurEffect);
 }
-
+/*
 void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex, int nextIndex) {
     QWidget* currentPage = stackedWidget->widget(currentIndex);
     QWidget* nextPage = stackedWidget->widget(nextIndex);
@@ -580,7 +676,7 @@ void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex
     animationOut->setStartValue(currentPage->geometry());
     animationOut->setEndValue(QRect(-currentPage->width(), currentPage->y(),
                                     currentPage->width(), currentPage->height()));
-    animationOut->setEasingCurve(QEasingCurve::InOutQuad);
+    animationOut->setEasingCurve(QEasingCurve::InOutExpo);
 
     // Slide-in animation for the next (incoming) page
     auto* animationIn = new QPropertyAnimation(nextPage, "geometry");
@@ -589,7 +685,7 @@ void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex
                                      nextPage->width(), nextPage->height()));
     animationIn->setEndValue(QRect(0, nextPage->y(),
                                    nextPage->width(), nextPage->height()));
-    animationIn->setEasingCurve(QEasingCurve::InOutQuad);
+    animationIn->setEasingCurve(QEasingCurve::InOutExpo);
 
     // Connect animations to manage visibility and stacking
     QObject::connect(animationOut, &QPropertyAnimation::finished, [=]() {
@@ -600,7 +696,46 @@ void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex
     // Start both animations
     animationOut->start();
     animationIn->start();
+} */
+void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex, int nextIndex) {
+    QWidget* currentPage = stackedWidget->widget(currentIndex);
+    QWidget* nextPage = stackedWidget->widget(nextIndex);
+
+    // 🚀 **Force correct geometry for new page before animation**
+    stackedWidget->setCurrentIndex(nextIndex);
+    stackedWidget->repaint();
+    nextPage->setGeometry(QRect(stackedWidget->width(), currentPage->y(),
+                                nextPage->width(), nextPage->height()));
+    nextPage->setVisible(true);
+    nextPage->update();
+    QCoreApplication::processEvents(); // ✅ Forces immediate UI updates
+
+    // 🚀 **Outgoing animation (fast exit)**
+    auto* animationOut = new QPropertyAnimation(currentPage, "geometry");
+    animationOut->setDuration(300); // **Quick transition**
+    animationOut->setStartValue(currentPage->geometry());
+    animationOut->setEndValue(QRect(-currentPage->width(), currentPage->y(),
+                                    currentPage->width(), currentPage->height()));
+    animationOut->setEasingCurve(QEasingCurve::InExpo);
+
+    QObject::connect(animationOut, &QPropertyAnimation::finished, [=]() {
+        currentPage->hide();
+        stackedWidget->repaint();  // ✅ Ensure entire widget refreshes
+    });
+
+    // 🚀 **Incoming animation (smooth)**
+    auto* animationIn = new QPropertyAnimation(nextPage, "geometry");
+    animationIn->setDuration(600);
+    animationIn->setStartValue(QRect(stackedWidget->width(), nextPage->y(),
+                                     nextPage->width(), nextPage->height()));
+    animationIn->setEndValue(QRect(0, nextPage->y(),
+                                   nextPage->width(), nextPage->height()));
+    animationIn->setEasingCurve(QEasingCurve::InOutExpo);
+
+    animationOut->start();
+    animationIn->start();
 }
+
 
 void MainWindow::transitionWithBlur(QStackedWidget* stackedWidget, int currentIndex, int nextIndex) {
     QWidget* currentPage = stackedWidget->widget(currentIndex);
@@ -641,6 +776,7 @@ void MainWindow::moveGraphicsView() {
     animation->setEasingCurve(QEasingCurve::OutQuad);  // Smooth easing effect
     animation->start(QAbstractAnimation::DeleteWhenStopped);  // Automatically clean up after animation
 }
+//board intialization
 void MainWindow::initializeBoard() {
     QList<QPushButton*> buttons = {
         ui->index0, ui->index1, ui->index2,
@@ -648,21 +784,115 @@ void MainWindow::initializeBoard() {
         ui->index6, ui->index7, ui->index8
     };
     isXturn = true;
+    // **Reset board array to -1 (empty cells)**
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            board[i][j] = -1;
     QIcon placeholder(appDir + ("/Images/Empty.png")); // a fully transparent PNG
     for (QPushButton* btn : buttons) {
         btn->setIcon(placeholder);
         btn->setIconSize(btn->size());
+        btn->setEnabled(true);
     }
 
 
 }
+//button image on table
 void MainWindow::setImageOnButton(QPushButton* button) {
     if (!button) return;
+    // Extract the number from the button name (e.g., "index3" → 3)
+    QString buttonName = button->objectName();  // Gets "indexX"
+    int index = buttonName.mid(5).toInt();  // Extract number after "index"
+qDebug() << "Setting icon for button:" << buttonName << "Index:" << index;
 
+    // Update board state
+    board[index / 3][index % 3] = isXturn ? 1 : 0;
     // Pick the correct icon
     QIcon icon(isXturn ? appDir+ ("/Images/x.png") : appDir+("/Images/o.png"));
     button->setIcon(icon);
     button->setIconSize(button->size());
     button->setEnabled(false); // Prevent re-clicking
+
     isXturn = !isXturn;        // Toggle turn
+    checkGameStatus();
+}
+//table check
+void MainWindow::checkGameStatus() {
+    int resultX = check_for_win(board, 1, 0); // Check if X won
+    int resultO = check_for_win(board, 0, 0); // Check if O won
+qDebug() << "Result X:" << resultX << "Result O:" << resultO;
+    if (resultX == -10) {
+        QMessageBox::information(this, "Game Over", "X Wins!");
+        initializeBoard(); // Reset board for a new game
+        return;
+    }
+
+    if (resultO == 10) {
+        QMessageBox::information(this, "Game Over", "O Wins!");
+        initializeBoard();
+        return;
+    }
+
+    // Check if board is full (draw)
+    bool isDraw = true;
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            if (board[i][j] == -1) isDraw = false;
+
+    if (isDraw) {
+        QMessageBox::information(this, "Game Over", "It's a Draw!");
+        initializeBoard();
+        return;
+    }
+
+    // ✅ **Only trigger AI move if difficulty is NOT 3 (PvP mode)**
+    if (!isXturn && selectedDifficulty != 3) makeAIMove();
+}
+//ai handle
+void MainWindow::makeAIMove() {
+    int aiMove = -1;
+
+    // Select AI difficulty
+    if (selectedDifficulty == 0) { // Easy AI
+        aiMove = easy_move(board);
+    } else if (selectedDifficulty == 1) { // Medium AI
+        aiMove = medium_move(board);
+    } else { // Hard AI (Minimax)
+        aiMove = hard_move(board);
+    }
+    // Debug: Check if AI move is valid
+    qDebug() << "AI chooses index:" << aiMove;
+    // If AI found a valid move, play it
+    if (aiMove != -1) {
+        board[aiMove / 3][aiMove % 3] = 0; // AI plays 'O'
+        QPushButton* aiButton = getButtonAtIndex(aiMove);
+
+        if (aiButton) {
+            qDebug() << "Updating button:" << aiButton->objectName();
+            setImageOnButton(aiButton);
+        } else {
+            qDebug() << "ERROR: Button at index" << aiMove << "not found!";
+        }
+        // Debug: Print board state
+        for (int i = 0; i < 3; i++)
+            qDebug() << board[i][0] << board[i][1] << board[i][2];
+
+        isXturn = true; // Switch back to player turn
+    }
+
+    // **Check game status again after AI move**
+    checkGameStatus();
+}
+QPushButton* MainWindow::getButtonAtIndex(int index) {
+    QList<QPushButton*> buttons = {
+        ui->index0, ui->index1, ui->index2,
+        ui->index3, ui->index4, ui->index5,
+        ui->index6, ui->index7, ui->index8
+    };
+qDebug() << "AI selecting button at index:" << index;
+    if (index >= 0 && index < buttons.size()) {
+        return buttons[index]; // Return button at given index
+    }
+
+    return nullptr; // Return null if index is out of range
 }
