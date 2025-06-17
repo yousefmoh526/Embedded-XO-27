@@ -26,8 +26,8 @@ set(PROJECT_SOURCES
     hoverbutton.h
 ButtonAnimation.h
 ButtonAnimation.cpp
-        minimax.cpp
-minimax.h
+        Source/minimax.cpp
+        Source/minimax.h
 
 )
 
