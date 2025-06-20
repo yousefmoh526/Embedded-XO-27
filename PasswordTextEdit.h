@@ -5,7 +5,7 @@
 #include <QTextEdit>
 #include <QKeyEvent>
 #include <QTextCursor>
-
+// fixed P capital
 class PasswordTextEdit : public QTextEdit {
     Q_OBJECT
 
