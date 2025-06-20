@@ -377,6 +377,16 @@
        <string/>
       </property>
      </widget>
+     <widget class="QListWidget" name="replayList">
+      <property name="geometry">
+       <rect>
+        <x>890</x>
+        <y>270</y>
+        <width>256</width>
+        <height>421</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="Arena">
      <widget class="QWidget" name="widget" native="true">
@@ -565,6 +575,19 @@ border: 5px solid white;</string>
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="HoverButton" name="backFromReplay">
+      <property name="geometry">
+       <rect>
+        <x>850</x>
+        <y>570</y>
+        <width>241</width>
+        <height>101</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="ResultsScreen"/>

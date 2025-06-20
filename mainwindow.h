@@ -50,5 +50,6 @@ private:
   void initializeDatabase();
  void handleLoginOrRegister(const QString& username, const QString& password);
   void populateStats();
+ void loadReplay(int gameId);
 };
 #endif // MAINWINDOW_H
