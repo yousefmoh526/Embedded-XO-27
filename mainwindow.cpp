@@ -957,8 +957,8 @@ qDebug() << "Setting icon for button:" << buttonName << "Index:" << index;
 }
 //table check
 void MainWindow::checkGameStatus() {
-    int resultX = check_for_win(board, 1, 0); // Check if X won
-    int resultO = check_for_win(board, 0, 0); // Check if O won
+    int resultX = global_check_for_win(board, 1); // Check if X won
+    int resultO = global_check_for_win(board, 0); // Check if O won
 qDebug() << "Result X:" << resultX << "Result O:" << resultO;
     if (resultX == -10) {
         showGameOverDialog("X Wins!");
