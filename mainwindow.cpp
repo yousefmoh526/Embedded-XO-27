@@ -26,7 +26,19 @@
 #include "ButtonAnimation.h"
 #include <QMessageBox>
 #include "./Source/minimax.h"
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QFile>
+#include <QDir>
+#include <QDebug>
+#include <QCryptographicHash>
 //meow time to github
+//hasher
+QString hashPassword(const QString& password) {
+    QByteArray hash = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256);
+    return QString(hash.toHex());
+}
 
 //IMAGE DISPLAYER
 void loadAndDisplayImage(QGraphicsView *view, QString imagePath, double scaleFactor) {
@@ -59,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     isXturn = true;
+    initializeDatabase();
     ui->PlayerLabel->hide();
     ui->welcometext->hide();
     // Set the window title
@@ -170,7 +183,9 @@ connect(ui->VsPlayer, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 connect(ui->VsAI, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 connect(ui->VsAI_2, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 connect(ui->VsAI_3, &QPushButton::clicked, clickSound, &QSoundEffect::play);
-
+connect(ui->Back, &QPushButton::clicked, clickSound, &QSoundEffect::play);
+ui->backFromReplay->hide(); // Initially hidden in the UI constructor
+connect(ui->backFromReplay, &QPushButton::clicked, clickSound, &QSoundEffect::play);
 //connect game buttons
 connect(ui->index0, &QPushButton::clicked, this, [=]() { setImageOnButton(ui->index0); });
 connect(ui->index1, &QPushButton::clicked, this, [=]() { setImageOnButton(ui->index1); });
@@ -184,6 +199,57 @@ connect(ui->index8, &QPushButton::clicked, this, [=]() { setImageOnButton(ui->in
 
 // Raise your UI components
 ui->MainImage->raise();
+//replays
+connect(ui->replayList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
+    int gameId = item->data(Qt::UserRole).toInt();
+
+    // 🚀 Transition to gameplay view first (e.g., index 4)
+
+    transitionWithBlur(ui->Menus, ui->Menus->currentIndex(), 4);
+
+    // Delay replay slightly to let UI settle
+    QTimer::singleShot(400, this, [this, gameId]() {
+        loadReplay(gameId);
+    });
+});
+//back from replay
+QIcon iconBR(appDir +"/images/Back.png"); // Adjust the path to match your guest button image file
+ui->backFromReplay->setIcon(iconBR);
+ui->backFromReplay->setIconSize(QSize(200, 200));
+
+// Style for the Back Button (same as loginButton)
+ui->backFromReplay->setStyleSheet(
+    "QPushButton {"
+    "    border: none;"
+    "    border-radius: 10px;" /* Smooth edges */
+    "    color: white;" /* Ensure text/icon contrasts well */
+    "}"
+    "QPushButton:hover {"
+    "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+    "        stop:0 rgba(60, 60, 60, 1), stop:1 rgba(30, 30, 30, 0.9));" /* Subtle hover gradient */
+    "    border: 1px solid rgba(255, 255, 255, 0.2);" /* Simulated glow */
+    "}"
+    "QPushButton:pressed {"
+    "    background-color: rgba(20, 20, 20, 0.9);" /* Slightly darker when pressed */
+    "    border: 1px solid rgba(255, 255, 255, 0.4);" /* Stronger pressed border glow */
+    "}"
+    );
+
+
+// Apply drop shadow effect to back Button (reuse from Login Button)
+ui->backFromReplay->setGraphicsEffect(createDropShadowEffect(this));
+QPropertyAnimation* BRUnifiedAnimation = createUnifiedAnimation(ui->backFromReplay, this);
+
+// Connect UnifiedAnimation to the button click
+connect(ui->backFromReplay, &QPushButton::clicked, this, [BRUnifiedAnimation]() {
+    BRUnifiedAnimation->start();
+
+});
+
+connect(ui->backFromReplay, &QPushButton::clicked, this, [this]() {
+    ui->backFromReplay->hide(); // Hide again for next time
+    transitionWithBlur(ui->Menus, ui->Menus->currentIndex(), 3); // or wherever you want to return
+});
 
 
 
@@ -234,13 +300,16 @@ ui->MainImage->raise();
     // Connect UnifiedAnimation to the button click
     connect(ui->loginButton, &QPushButton::clicked, this, [UnifiedAnimation]() {
         UnifiedAnimation->start();
+
     });
     connect(ui->loginButton, &QPushButton::clicked, [this]() {
+        QString username = ui->UsernameText->toPlainText().trimmed();
+
+        QString password = ui->PasswordText->getActualText(); // ✅ this gets the actual typed password
+
+        handleLoginOrRegister(username, password);
 updatePlayerLabel(ui->UsernameText->toPlainText());
-        // Add a tiny delay (e.g., 300 ms) before the transition starts
-        QTimer::singleShot(200, [this]() {
-            transitionWithBlur(ui->Menus, 0, 1);
-        });
+populateStats();
     });
 
     // Create Guest Button
@@ -368,7 +437,7 @@ updatePlayerLabel(ui->UsernameText->toPlainText());
         StatsUnifiedAnimation->start();
     });
     connect(ui->StatsButton, &QPushButton::clicked, [this]() {
-
+        moveGraphicsView();
         // Add a tiny delay (e.g., 300 ms) before the transition starts
         QTimer::singleShot(200, [this]() {
             transitionWithBlur(ui->Menus, 1, 3);
@@ -638,9 +707,112 @@ selectedDifficulty = 2;
     loadAndDisplayImage(ui->VsAITitle, appDir + "/images/AITitle.png", 1);
 
 
-//Arena
+//stats screen
+
+loadAndDisplayImage(ui->gamesPlayed, appDir + "/images/Games-Played.png", 0.45);
+loadAndDisplayImage(ui->wins, appDir + "/images/Wins.png", 0.5);
+loadAndDisplayImage(ui->losses, appDir + "/images/Losses.png", 0.5);
+loadAndDisplayImage(ui->draws, appDir + "/images/Draws.png", 0.5);
+loadAndDisplayImage(ui->wR, appDir + "/images/WR.png", 0.5);
+ui->gamesPlayedLabel->setStyleSheet(R"(
+    QLabel {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+)");
+
+ui->winsLabel->setStyleSheet(R"(
+    QLabel {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+)");
+
+ui->lossesLabel->setStyleSheet(R"(
+    QLabel {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+)");
+
+ui->wRLabel->setStyleSheet(R"(
+    QLabel {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+)");
+
+ui->drawsLabel->setStyleSheet(R"(
+    QLabel {
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+)");
+auto shadow = new QGraphicsDropShadowEffect(this);
+shadow->setBlurRadius(20);
+shadow->setOffset(2, 2);
+shadow->setColor(Qt::black);
+ui->gamesPlayedLabel->setGraphicsEffect(shadow);
+ui->winsLabel->setGraphicsEffect(shadow);
+ui->lossesLabel->setGraphicsEffect(shadow);
+ui->drawsLabel->setGraphicsEffect(shadow);
+ui->wRLabel->setGraphicsEffect(shadow);
+//Back Button
+
+// Set an icon on the QPushButton
+QIcon iconBack(appDir +"/images/Back.png"); // Adjust the path to match your folder and file name
+ui->Back->setIcon(iconBack);
+ui->Back->setIconSize(QSize(150, 150));
+ui->Back->setStyleSheet(
+    "QPushButton {"
+    "    border: none;"
+    "    border-radius: 10px;" /* Smooth edges */
+    "    color: white;" /* Ensure text/icon contrasts well */
+    "}"
+    "QPushButton:hover {"
+    "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+    "        stop:0 rgba(60, 60, 60, 1), stop:1 rgba(30, 30, 30, 0.9));" /* Subtle hover gradient */
+    "    border: 1px solid rgba(255, 255, 255, 0.2);" /* Simulated glow */
+    "}"
+    "QPushButton:pressed {"
+    "    background-color: rgba(20, 20, 20, 0.9);" /* Slightly darker when pressed */
+    "    border: 1px solid rgba(255, 255, 255, 0.4);" /* Stronger pressed border glow */
+    "}"
+    );
 
 
+
+// Apply drop shadow effect to Play Button (reuse from Login Button)
+ui->Back->setGraphicsEffect(createDropShadowEffect(this));
+QPropertyAnimation* BackUnifiedAnimation = createUnifiedAnimation(ui->Back, this);
+
+// Connect UnifiedAnimation to the button click
+connect(ui->Back, &QPushButton::clicked, this, [BackUnifiedAnimation]() {
+    BackUnifiedAnimation->start();
+
+});
+connect(ui->Back, &QPushButton::clicked, [this]() {
+    restoreGraphicsViewPosition();
+    // Add a tiny delay (e.g., 300 ms) before the transition starts
+    QTimer::singleShot(200, [this]() {
+
+        transitionWithBlur(ui->Menus, 3, 1);
+        // Delay stats population slightly
+        QTimer::singleShot(500, [this]() {
+            populateStats();
+        });
+    });
+});
 
 }
 
@@ -660,43 +832,7 @@ void MainWindow::applyBlurEffect(QWidget* widget, qreal blurRadius) {
     blurEffect->setBlurRadius(blurRadius);  // Set the blur intensity
     widget->setGraphicsEffect(blurEffect);
 }
-/*
-void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex, int nextIndex) {
-    QWidget* currentPage = stackedWidget->widget(currentIndex);
-    QWidget* nextPage = stackedWidget->widget(nextIndex);
 
-    // Ensure the incoming page is fully prepared
-    nextPage->setGeometry(QRect(stackedWidget->width(), currentPage->y(),
-                                nextPage->width(), nextPage->height()));
-    nextPage->show();
-
-    // Slide-out animation for the current (outgoing) page
-    auto* animationOut = new QPropertyAnimation(currentPage, "geometry");
-    animationOut->setDuration(500);
-    animationOut->setStartValue(currentPage->geometry());
-    animationOut->setEndValue(QRect(-currentPage->width(), currentPage->y(),
-                                    currentPage->width(), currentPage->height()));
-    animationOut->setEasingCurve(QEasingCurve::InOutExpo);
-
-    // Slide-in animation for the next (incoming) page
-    auto* animationIn = new QPropertyAnimation(nextPage, "geometry");
-    animationIn->setDuration(500);
-    animationIn->setStartValue(QRect(stackedWidget->width(), nextPage->y(),
-                                     nextPage->width(), nextPage->height()));
-    animationIn->setEndValue(QRect(0, nextPage->y(),
-                                   nextPage->width(), nextPage->height()));
-    animationIn->setEasingCurve(QEasingCurve::InOutExpo);
-
-    // Connect animations to manage visibility and stacking
-    QObject::connect(animationOut, &QPropertyAnimation::finished, [=]() {
-        currentPage->hide(); // Hide the outgoing page
-        stackedWidget->setCurrentIndex(nextIndex); // Update stacked widget index
-    });
-
-    // Start both animations
-    animationOut->start();
-    animationIn->start();
-} */
 void MainWindow::slideTransition(QStackedWidget* stackedWidget, int currentIndex, int nextIndex) {
     QWidget* currentPage = stackedWidget->widget(currentIndex);
     QWidget* nextPage = stackedWidget->widget(nextIndex);
@@ -784,6 +920,8 @@ void MainWindow::initializeBoard() {
         ui->index6, ui->index7, ui->index8
     };
     isXturn = true;
+    moveHistory.clear();
+
     // **Reset board array to -1 (empty cells)**
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
@@ -812,24 +950,25 @@ qDebug() << "Setting icon for button:" << buttonName << "Index:" << index;
     button->setIcon(icon);
     button->setIconSize(button->size());
     button->setEnabled(false); // Prevent re-clicking
-
+    QString moveString = QString("%1:%2").arg(isXturn ? "X" : "O").arg(index);
+    moveHistory.append(moveString);
     isXturn = !isXturn;        // Toggle turn
     checkGameStatus();
 }
 //table check
 void MainWindow::checkGameStatus() {
-    int resultX = global_check_for_win(board, 1); // Check if X won
-    int resultO = global_check_for_win(board, 0); // Check if O won
+    int resultX = check_for_win(board, 1, 0); // Check if X won
+    int resultO = check_for_win(board, 0, 0); // Check if O won
 qDebug() << "Result X:" << resultX << "Result O:" << resultO;
     if (resultX == -10) {
-        QMessageBox::information(this, "Game Over", "X Wins!");
-        initializeBoard(); // Reset board for a new game
+        showGameOverDialog("X Wins!");
+        populateStats();
         return;
     }
 
     if (resultO == 10) {
-        QMessageBox::information(this, "Game Over", "O Wins!");
-        initializeBoard();
+        showGameOverDialog("O Wins!");
+        populateStats();
         return;
     }
 
@@ -840,13 +979,16 @@ qDebug() << "Result X:" << resultX << "Result O:" << resultO;
             if (board[i][j] == -1) isDraw = false;
 
     if (isDraw) {
-        QMessageBox::information(this, "Game Over", "It's a Draw!");
-        initializeBoard();
+        showGameOverDialog("It's a Draw!");
+        populateStats();
         return;
     }
 
     // ✅ **Only trigger AI move if difficulty is NOT 3 (PvP mode)**
-    if (!isXturn && selectedDifficulty != 3) makeAIMove();
+    if (!isXturn && selectedDifficulty != 3)
+        QTimer::singleShot(800, this, [this]() {
+            makeAIMove();
+        });
 }
 //ai handle
 void MainWindow::makeAIMove() {
@@ -864,7 +1006,7 @@ void MainWindow::makeAIMove() {
     qDebug() << "AI chooses index:" << aiMove;
     // If AI found a valid move, play it
     if (aiMove != -1) {
-        board[aiMove / 3][aiMove % 3] = 0; // AI plays 'O'
+
         QPushButton* aiButton = getButtonAtIndex(aiMove);
 
         if (aiButton) {
@@ -880,8 +1022,7 @@ void MainWindow::makeAIMove() {
         isXturn = true; // Switch back to player turn
     }
 
-    // **Check game status again after AI move**
-    checkGameStatus();
+
 }
 QPushButton* MainWindow::getButtonAtIndex(int index) {
     QList<QPushButton*> buttons = {
@@ -895,4 +1036,226 @@ qDebug() << "AI selecting button at index:" << index;
     }
 
     return nullptr; // Return null if index is out of range
+}
+
+// game over
+void MainWindow::showGameOverDialog(const QString& message) {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Game Over");
+    msgBox.setText(message);
+    msgBox.setIcon(QMessageBox::Information);
+    populateStats();
+    QPushButton* playAgainButton = msgBox.addButton("Play Again", QMessageBox::AcceptRole);
+    QPushButton* returnMenuButton = msgBox.addButton("Return to Menu", QMessageBox::RejectRole);
+    qDebug() << "Current user ID when saving stats:" << currentUserId;
+
+    if (currentUserId != -1) {
+        QString result;
+        if (message.contains("X Wins")) result = "Win";
+        else if (message.contains("O Wins")) result = "Loss";
+        else result = "Draw";
+
+        QSqlQuery insert;
+        insert.prepare("INSERT INTO GameHistory (user_id, result, moves, played_at) "
+                       "VALUES (:user_id, :result, :moves, datetime('now'))");
+
+        insert.bindValue(":user_id", currentUserId);
+        insert.bindValue(":result", result);
+        insert.bindValue(":moves", moveHistory.join(","));
+        insert.exec();
+    }
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == returnMenuButton) {
+        restoreGraphicsViewPosition();
+        transitionWithBlur(ui->Menus, ui->Menus->currentIndex(), 1); // Assuming index 1 is menu
+    } else {
+        initializeBoard(); // Restart game
+    }
+}
+// return title to center
+void MainWindow::restoreGraphicsViewPosition() {
+    QPropertyAnimation* animation = new QPropertyAnimation(ui->MainImage, "geometry");
+    animation->setDuration(500);
+    animation->setStartValue(ui->MainImage->geometry());
+    animation->setEndValue(ui->MainImage->geometry().translated(-300, 0));  // Move back to original position
+    animation->setEasingCurve(QEasingCurve::OutQuad);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
+// DATA BASE
+void MainWindow::initializeDatabase() {
+    QString dbPath = QCoreApplication::applicationDirPath() + "/game_data.db";
+    QDir().mkpath(QFileInfo(dbPath).absolutePath()); // Make sure /data exists
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(dbPath);
+
+    if (!db.open()) {
+        qDebug() << "❌ Failed to open database:" << db.lastError().text();
+        return;
+    }
+
+    QSqlQuery query;
+
+
+    // Create Users table
+    query.exec("CREATE TABLE IF NOT EXISTS Users ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+               "username TEXT UNIQUE NOT NULL,"
+               "password_hash TEXT NOT NULL,"
+               "display_name TEXT,"
+               "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+    // Create GameHistory table
+    query.exec("CREATE TABLE IF NOT EXISTS GameHistory ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+               "user_id INTEGER,"
+               "opponent_type TEXT,"
+               "difficulty INTEGER,"
+               "result TEXT,"
+               "moves TEXT,"
+               "played_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+               "FOREIGN KEY(user_id) REFERENCES Users(id))");
+
+    qDebug() << "✅ Database initialized at:" << dbPath;
+}
+//login and register handler
+void MainWindow::handleLoginOrRegister(const QString& username, const QString& password) {
+    if (username.isEmpty() || password.isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "Username and password cannot be empty.");
+        return;
+    }
+
+    if (password.length() < 5) {
+        QMessageBox::warning(this, "Password Too Short", "Password must be at least 5 characters long.");
+        return;
+    }
+
+    QSqlQuery query;
+    query.prepare("SELECT id, password_hash FROM Users WHERE username = :username");
+    query.bindValue(":username", username);
+
+    if (query.exec() && query.next()) {
+        QString storedHash = query.value("password_hash").toString();
+        int userId = query.value("id").toInt();
+
+        if (storedHash == hashPassword(password)) {
+            currentUserId = userId;
+            updatePlayerLabel(username);
+
+            QTimer::singleShot(200, [this]() {
+                transitionWithBlur(ui->Menus, 0, 1);
+            });
+        } else {
+            QMessageBox::critical(this, "Login Failed", "Incorrect password.");
+        }
+
+    } else {
+        QSqlQuery insert;
+        insert.prepare("INSERT INTO Users (username, password_hash, display_name) "
+                       "VALUES (:username, :password_hash, :display_name)");
+        insert.bindValue(":username", username);
+        insert.bindValue(":password_hash", hashPassword(password));
+        insert.bindValue(":display_name", username);
+
+        if (insert.exec()) {
+            currentUserId = insert.lastInsertId().toInt();
+            updatePlayerLabel(username);
+
+            QMessageBox::information(this, "Registration Successful", "Welcome, " + username + "!");
+
+            QTimer::singleShot(200, [this]() {
+                transitionWithBlur(ui->Menus, 0, 1);
+            });
+        } else {
+            QMessageBox::critical(this, "Registration Failed", insert.lastError().text());
+        }
+    }
+}
+//stats
+void MainWindow::populateStats() {
+    int gamesPlayed = 0, wins = 0, losses = 0, draws = 0;
+
+    QSqlQuery query;
+    query.prepare("SELECT result FROM GameHistory WHERE user_id = :id");
+    query.bindValue(":id", currentUserId);
+    if (query.exec()) {
+        while (query.next()) {
+            gamesPlayed++;
+            QString result = query.value(0).toString();
+            if (result == "Win") wins++;
+            else if (result == "Loss") losses++;
+            else if (result == "Draw") draws++;
+        }
+    } else {
+        qDebug() << "Failed to fetch game stats:" << query.lastError().text();
+    }
+
+    double winRate = (gamesPlayed > 0) ? (static_cast<double>(wins) / gamesPlayed) * 100.0 : 0.0;
+
+    // Update labels
+    ui->gamesPlayedLabel->setText(QString::number(gamesPlayed));
+    ui->winsLabel->setText(QString::number(wins));
+    ui->lossesLabel->setText(QString::number(losses));
+    ui->drawsLabel->setText(QString::number(draws));
+    ui->wRLabel->setText(QString::number(winRate, 'f', 1) + "%");
+    ui->replayList->clear();
+
+    QSqlQuery q;
+    q.prepare("SELECT id, result, played_at FROM GameHistory WHERE user_id = :userId ORDER BY played_at DESC");
+    q.bindValue(":userId", currentUserId);
+    q.exec();
+
+    while (q.next()) {
+        int gameId = q.value("id").toInt();
+        QString result = q.value("result").toString();
+        QString date = q.value("played_at").toString();
+
+        auto* item = new QListWidgetItem(QString("Game #%1 - %2 on %3").arg(gameId).arg(result, date));
+        item->setData(Qt::UserRole, gameId);
+        ui->replayList->addItem(item);
+    }
+
+}
+//game replay system
+void MainWindow::loadReplay(int gameId) {
+    // Reset board
+    initializeBoard();
+    ui->backFromReplay->show(); // 🌟 Only shown during replay
+
+    QSqlQuery q;
+    q.prepare("SELECT moves FROM GameHistory WHERE id = :id");
+    q.bindValue(":id", gameId);
+    if (!q.exec() || !q.next()) {
+        qDebug() << "❌ Failed to load replay for game ID" << gameId;
+        return;
+    }
+
+    QString moves = q.value("moves").toString();
+    QStringList moveList = moves.split(",", Qt::SkipEmptyParts);
+
+    // Play moves one by one
+    int delay = 0;
+    for (const QString& move : moveList) {
+        QStringList parts = move.split(":");
+        if (parts.size() != 2) continue;
+
+        QString symbol = parts[0];
+        int index = parts[1].toInt();
+
+        QTimer::singleShot(delay, this, [=]() {
+            QPushButton* btn = getButtonAtIndex(index);
+            if (btn) {
+                QIcon icon(symbol == "X" ? appDir + "/Images/x.png"
+                                         : appDir + "/Images/o.png");
+                btn->setIcon(icon);
+                btn->setIconSize(btn->size());
+                btn->setEnabled(false);
+            }
+        });
+
+        delay += 800; // Delay between each move (in ms)
+    }
+
 }

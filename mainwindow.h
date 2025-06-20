@@ -8,6 +8,7 @@
 #include <QPushButton>
 QT_BEGIN_NAMESPACE
 namespace Ui {
+
 class MainWindow;
 }
 QT_END_NAMESPACE
@@ -15,6 +16,7 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    // Forward declaration
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -25,6 +27,9 @@ private slots:
 
 
 private:
+    int currentUserId = -1;
+    QStringList moveHistory;
+
     QPushButton* getButtonAtIndex(int index);
     void checkGameStatus();
     void makeAIMove();
@@ -40,5 +45,11 @@ private:
  void moveGraphicsView();
     void initializeBoard();
  void setImageOnButton(QPushButton* button);
+  void  showGameOverDialog(const QString& message);
+ void restoreGraphicsViewPosition();
+  void initializeDatabase();
+ void handleLoginOrRegister(const QString& username, const QString& password);
+  void populateStats();
+ void loadReplay(int gameId);
 };
 #endif // MAINWINDOW_H
