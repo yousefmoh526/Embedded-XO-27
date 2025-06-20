@@ -13,7 +13,7 @@ set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
 
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Sql Widgets Multimedia MultimediaWidgets)
 
 # Create a library for the AI logic (shared between GUI and tests)
 add_library(ai_logic
@@ -68,7 +68,7 @@ else()
 
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+#   set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
         add_executable(TicTacToe
             ${PROJECT_SOURCES}
@@ -80,6 +80,12 @@ endif()
 target_link_libraries(TicTacToe PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(TicTacToe PRIVATE Qt6::Multimedia)
 target_link_libraries(TicTacToe PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::Multimedia Qt6::MultimediaWidgets)
+target_link_libraries(TicTacToe
+    PRIVATE
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Sql
+)
 # Define the icon file for the executable
 
 
