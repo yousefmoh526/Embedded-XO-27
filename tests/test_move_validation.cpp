@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
-#include "easy_move.h"
-#include "medium_move.h"
-#include "hard_move.h"
+#include "minimax.h"
 #include <cstdlib> // For srand, rand
 #include <ctime>   // For time
 #include <iostream> // For std::cout
